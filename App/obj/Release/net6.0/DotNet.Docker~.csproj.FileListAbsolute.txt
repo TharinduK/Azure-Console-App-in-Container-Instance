@@ -1,0 +1,15 @@
+C:\reposgithub\AzureExperiments-console-in-ci\App\bin\Release\net6.0\DotNet.Docker~.exe
+C:\reposgithub\AzureExperiments-console-in-ci\App\bin\Release\net6.0\DotNet.Docker~.deps.json
+C:\reposgithub\AzureExperiments-console-in-ci\App\bin\Release\net6.0\DotNet.Docker~.runtimeconfig.json
+C:\reposgithub\AzureExperiments-console-in-ci\App\bin\Release\net6.0\DotNet.Docker~.dll
+C:\reposgithub\AzureExperiments-console-in-ci\App\bin\Release\net6.0\DotNet.Docker~.pdb
+C:\reposgithub\AzureExperiments-console-in-ci\App\obj\Release\net6.0\DotNet.Docker~.csproj.AssemblyReference.cache
+C:\reposgithub\AzureExperiments-console-in-ci\App\obj\Release\net6.0\DotNet.Docker~.GeneratedMSBuildEditorConfig.editorconfig
+C:\reposgithub\AzureExperiments-console-in-ci\App\obj\Release\net6.0\DotNet.Docker~.AssemblyInfoInputs.cache
+C:\reposgithub\AzureExperiments-console-in-ci\App\obj\Release\net6.0\DotNet.Docker~.AssemblyInfo.cs
+C:\reposgithub\AzureExperiments-console-in-ci\App\obj\Release\net6.0\DotNet.Docker~.csproj.CoreCompileInputs.cache
+C:\reposgithub\AzureExperiments-console-in-ci\App\obj\Release\net6.0\DotNet.Docker~.dll
+C:\reposgithub\AzureExperiments-console-in-ci\App\obj\Release\net6.0\refint\DotNet.Docker~.dll
+C:\reposgithub\AzureExperiments-console-in-ci\App\obj\Release\net6.0\DotNet.Docker~.pdb
+C:\reposgithub\AzureExperiments-console-in-ci\App\obj\Release\net6.0\DotNet.Docker~.genruntimeconfig.cache
+C:\reposgithub\AzureExperiments-console-in-ci\App\obj\Release\net6.0\ref\DotNet.Docker~.dll
