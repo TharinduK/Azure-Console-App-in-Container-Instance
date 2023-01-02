@@ -13,32 +13,42 @@
 ## Experiment 
 
 1. Check docker and dot net version 
-```shell
-# Docker Version 
-docker --version 
-> Docker version 20.10.17, build 100c701
 
-# dotnet sdk version 
+*Docker Version*
+```shell
+docker --version 
+```
+```txt
+output :
+> Docker version 20.10.17, build 100c701
+```
+*dotnet sdk version*
+```shell
 dotnet --version 
+```
+```txt
+output :
 > 7.0.101
 ```
 ### Create console app to run in docker 
 2. Create .net application using vs code
 
-```shell
-# Get supported project templates 
-dotnet new 
 
-# Create new console project 
+*Get supported project templates*
+```shell
+dotnet new 
+```
+*Create new console project*
+```shell
 # dotnet new <short name> -n <project name> -o <project folder>
 dotnet new console -n helloConsole -o helloCode.console
-
-# Open project in vs code
+```
+*Open project in vs code*
+```shell
 code .
-
 ```
 
-3. Update code
+1. Update code
 ``` cSharp
 // See https://aka.ms/new-console-template for more information
 Console.WriteLine("Hello, World!");
