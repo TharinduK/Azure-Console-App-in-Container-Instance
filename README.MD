@@ -61,45 +61,126 @@ while (max == -1 || counter < max)
     await Task.Delay(TimeSpan.FromMilliseconds(1_000));
 }
 ```
-4. All VS code to add debugging files (popup)
+4. Add debugging files 
+   * "Run and Debug" extension >> "create a launch.json file > .NET 5+ and .NET Core"
+![Add debugging file](./doc/AddDebug.png)
+   * "Run and Debug" extension >> .NET Core Launch 
+  
 5. Add docker support using docker extension 
    * Ctrl+Shift+P >> Add docker file..
   ![Add docker file](./doc/AddDockerSupport1.png)
    * Select project type ![Add docker file](./doc/AddDockerSupport2ProjectType.png)
-  * Select OS ![Add docker file](./doc/AddDockerSupport3OS.png)
-  * No docker compose (single service) ![Add docker file](./doc/AddDockerSupport4DockerCompose.png)
+   * Select OS ![Add docker file](./doc/AddDockerSupport3OS.png)
+   * No docker compose (single service) ![Add docker file](./doc/AddDockerSupport4DockerCompose.png)
 
-Docker file is created 
+   * Docker file is created 
 ![Add docker file](./doc/AddDockerSupport5DockerFileAdded.png)
+Docker file 
 ```yaml
-FROM mcr.microsoft.com/dotnet/runtime:7.0 AS base
+FROM mcr.microsoft.com/dotnet/runtime:6.0 AS base
 WORKDIR /app
 
-# Creates a non-root user with an explicit UID and adds permission to access the /app folder
-# For more info, please refer to https://aka.ms/vscode-docker-dotnet-configure-containers
-RUN adduser -u 5678 --disabled-password --gecos "" appuser && chown -R appuser /app
-USER appuser
-
-FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
 WORKDIR /src
-COPY ["helloCode.console/helloConsole.csproj", "helloCode.console/"]
-RUN dotnet restore "helloCode.console/helloConsole.csproj"
+COPY ["App/DotNet.Docker~.csproj", "App/"]
+RUN dotnet restore "App\DotNet.Docker~.csproj"
 COPY . .
-WORKDIR "/src/helloCode.console"
-RUN dotnet build "helloConsole.csproj" -c Release -o /app/build
+WORKDIR "/src/App"
+RUN dotnet build "DotNet.Docker~.csproj" -c Release -o /app/build
 
 FROM build AS publish
-RUN dotnet publish "helloConsole.csproj" -c Release -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "DotNet.Docker~.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "helloConsole.dll"]
-
+ENTRYPOINT ["dotnet", "DotNet.Docker~.dll"]
 ```
-5. Launch project in docker 
+5. Debug project in docker 
+* "Run and Debug" extension >> "Docker .NET Core Launch
 ![Add docker file](./doc/LaunchProjectInDocker.png)
 
+
+### Build and load image to registory 
+1. Build a docker image with docker file in the current directory (.)
+```shell
+# Docker build –t [image name]:[version] -f [docker file location] [path]
+image=helloconsole
+ver=latest
+docker build -t $image:$ver -f ./App/Dockerfile  .
+```
+
+2. Run project in docker
+```shell
+image=helloconsole
+ver=latest
+
+docker run $image 5
+```
+
+3. Tag local docker image so it can be pushed to docker registry 
+```shell
+#docker tag SOURCE_IMAGE[:TAG] TARGET_IMAGE[:TAG]
+registry=tkwuscr
+repo=tk
+image=helloconsole
+ver=latest
+docker tag $image:latest $registry.azurecr.io/$repo/$image:$ver
+```
+
+4. Log in to container registry 
+```shell
+registry=tkwuscr
+un=tkwuscr  # Becuase --admin-enabled true
+pw=WbpzAGPQvRaYFmFcjdpj9gWYRRiMXagjRCzVCY+4v4+ACRCu7vLu # admin access key
+docker login $registry.azurecr.io -u $un -p $pw
+```
+
+5. Push image to registry 
+```shell
+# docker push [docker registry name]/[repo name]/[Image name]:[version]
+registry=tkwuscr
+repo=tk
+image=helloconsole
+ver=latest
+docker push $registry.azurecr.io/$repo/$image:$ver
+```
+### Create az container instance from image
+1. log in to Azure 
+```shell
+az login
+```
+
+2. Set context to correct subscription
+```shell
+sub=708854ac-164b-4d34-a0b9-69ff53d7704d
+az account set -s $sub
+
+az account list -o table
+```
+
+3. Create container instance from image ([using az CLI](https://learn.microsoft.com/en-us/cli/azure/container?view=azure-cli-latest#az-container-create))
+```shell
+rg=tkcr-rg
+ci=helloconsole-ci
+registry=tkwuscr
+repo=tk
+image=helloconsole
+ver=latest
+un=tkwuscr  # Becuase --admin-enabled true
+pw=WbpzAGPQvRaYFmFcjdpj9gWYRRiMXagjRCzVCY+4v4+ACRCu7vLu # admin access key
+az container create -g $rg  -n $ci \
+--registry-login-server $registry.azurecr.io \
+--registry-username $un \
+--registry-password $pw \
+--image $registry.azurecr.io/$repo/$image:$ver \
+--cpu 1 --memory 1 --os-type Windows	  \
+--dns-name-label $ci 
+
+az container exec -g $rg  -n $ci --exec-command "cmd.exe"
+```
+
+# TO DO: Notes below are to do to include additional features 
 ### Add connection to SQL server 
 1. Add nuget package listed below 
    * Microsoft.Extensions.Configuration
@@ -116,9 +197,9 @@ ENTRYPOINT ["dotnet", "helloConsole.dll"]
 }  
 ```
 
-3. Treate appsettings.json file as content and copy to output directory (file>> properties>> "Copy to output directory: Copy always)
+1. Treate appsettings.json file as content and copy to output directory (file>> properties>> "Copy to output directory: Copy always)
 
-4. Code to query database
+2. Code to query database
    
   ```csharp
 using System.Data;
