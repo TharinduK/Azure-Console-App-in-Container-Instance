@@ -18,21 +18,18 @@
 ```shell
 docker --version 
 ```
-```txt
-output :
+> output :
 > Docker version 20.10.17, build 100c701
-```
+
 *dotnet sdk version*
 ```shell
 dotnet --version 
 ```
-```txt
-output :
+> output :
 > 7.0.101
-```
-### Create console app to run in docker 
-2. Create .net application using vs code
 
+### Create console app to run in docker 
+1. Create .net application using vs code
 
 *Get supported project templates*
 ```shell
@@ -47,8 +44,7 @@ dotnet new console -n helloConsole -o helloCode.console
 ```shell
 code .
 ```
-
-1. Update code
+2. Update code
 ``` cSharp
 // See https://aka.ms/new-console-template for more information
 Console.WriteLine("Hello, World!");
@@ -61,12 +57,12 @@ while (max == -1 || counter < max)
     await Task.Delay(TimeSpan.FromMilliseconds(1_000));
 }
 ```
-4. Add debugging files 
+3. Add debugging files 
    * "Run and Debug" extension >> "create a launch.json file > .NET 5+ and .NET Core"
 ![Add debugging file](./doc/AddDebug.png)
    * "Run and Debug" extension >> .NET Core Launch 
   
-5. Add docker support using docker extension 
+4. Add docker support using docker extension 
    * Ctrl+Shift+P >> Add docker file..
   ![Add docker file](./doc/AddDockerSupport1.png)
    * Select project type ![Add docker file](./doc/AddDockerSupport2ProjectType.png)
@@ -110,7 +106,7 @@ ver=latest
 docker build -t $image:$ver -f ./App/Dockerfile  .
 ```
 
-2. Run project in docker
+2. Run project on docker desktop 
 ```shell
 image=helloconsole
 ver=latest
@@ -122,10 +118,11 @@ docker run $image 5
 ```shell
 #docker tag SOURCE_IMAGE[:TAG] TARGET_IMAGE[:TAG]
 registry=tkwuscr
-repo=tk
+#repo=tk
 image=helloconsole
 ver=latest
-docker tag $image:latest $registry.azurecr.io/$repo/$image:$ver
+#docker tag $image:latest $registry.azurecr.io/$repo/$image:$ver
+docker tag $image:latest $registry.azurecr.io/$image:$ver
 ```
 
 4. Log in to container registry 
@@ -140,12 +137,19 @@ docker login $registry.azurecr.io -u $un -p $pw
 ```shell
 # docker push [docker registry name]/[repo name]/[Image name]:[version]
 registry=tkwuscr
-repo=tk
+#repo=tk
 image=helloconsole
 ver=latest
-docker push $registry.azurecr.io/$repo/$image:$ver
+docker push $registry.azurecr.io/$image:$ver
 ```
-### Create az container instance from image
+
+### Create az container instance using logic app image
+REf:https://github.com/Azure-Samples/aci-logicapps-integration 
+https://soltisweb.com/blog/detail/2021-09-01-deployinganimagefromazurecontainerregistrytoazurelogicapps
+1. Create logic app with managed identity 
+2. 
+
+### Create az container instance using az CLI from image
 1. log in to Azure 
 ```shell
 az login
@@ -160,7 +164,7 @@ az account list -o table
 ```
 
 3. Create container instance from image ([using az CLI](https://learn.microsoft.com/en-us/cli/azure/container?view=azure-cli-latest#az-container-create))
-```shell
+4. ```shell
 rg=tkcr-rg
 ci=helloconsole-ci
 registry=tkwuscr
