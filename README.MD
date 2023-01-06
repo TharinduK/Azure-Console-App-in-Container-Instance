@@ -110,7 +110,6 @@ docker build -t $image:$ver -f ./App/Dockerfile  .
 ```shell
 image=helloconsole
 ver=latest
-
 docker run $image 5
 ```
 
@@ -124,12 +123,24 @@ ver=latest
 #docker tag $image:latest $registry.azurecr.io/$repo/$image:$ver
 docker tag $image:latest $registry.azurecr.io/$image:$ver
 ```
+4. log in to Azure 
+```shell
+az login
+```
 
-4. Log in to container registry 
+5. Set context to correct subscription
+```shell
+sub=708854ac-164b-4d34-a0b9-69ff53d7704d
+az account set -s $sub
+az account list -o table
+```
+
+6. Get admin password for ACR and log in to container registry 
 ```shell
 registry=tkwuscr
-un=tkwuscr  # Becuase --admin-enabled true
-pw=WbpzAGPQvRaYFmFcjdpj9gWYRRiMXagjRCzVCY+4v4+ACRCu7vLu # admin access key
+rg=tkcr-rg
+un=$(az acr credential show -n $registry -g $rg --query username -o tsv)
+pw=$(az acr credential show -n $registry -g $rg --query passwords[0].value -o tsv)
 docker login $registry.azurecr.io -u $un -p $pw
 ```
 
@@ -159,8 +170,8 @@ az login
 ```shell
 sub=708854ac-164b-4d34-a0b9-69ff53d7704d
 az account set -s $sub
-
 az account list -o table
+
 ```
 
 3. Create container instance from image ([using az CLI](https://learn.microsoft.com/en-us/cli/azure/container?view=azure-cli-latest#az-container-create))
@@ -171,8 +182,8 @@ registry=tkwuscr
 repo=tk
 image=helloconsole
 ver=latest
-un=tkwuscr  # Becuase --admin-enabled true
-pw=WbpzAGPQvRaYFmFcjdpj9gWYRRiMXagjRCzVCY+4v4+ACRCu7vLu # admin access key
+un=$(az acr credential show -n $registry -g $rg --query username -o tsv)
+pw=$(az acr credential show -n $registry -g $rg --query passwords[0].value -o tsv)
 az container create -g $rg  -n $ci \
 --registry-login-server $registry.azurecr.io \
 --registry-username $un \
