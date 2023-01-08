@@ -151,36 +151,24 @@ docker push $registry.azurecr.io/$image:$ver
 ```
 
 ### Create az container instance using logic app image
-REf:https://github.com/Azure-Samples/aci-logicapps-integration 
-https://soltisweb.com/blog/detail/2021-09-01-deployinganimagefromazurecontainerregistrytoazurelogicapps
-https://github.com/Azure-Samples/aci-logicapps-integration
-1. Create logic app with managed identity 
 
+
+Create infrastructure resouces
 ```shell
 registry=tkwuscr4 #tkwuscr
 image=helloconsole
 ver=latest
-
 sub=708854ac-164b-4d34-a0b9-69ff53d7704d
 rg=tkcr4-rg #tkcr-rg
-
 l=centralus
-```
 
---create infrastructure resouces
-```shell
 az group create -n $rg -l $l
 
-az deployment group create -n InitialNetwrok \
--g $rg \
+az deployment group create -n InitialSetup -g $rg \
 --mode Incremental \
 --template-file template.bicep \
 --parameters parameters.json 
 ```
-
-
-
-
 
 # Docker CLI commands
 
@@ -191,3 +179,5 @@ az deployment group create -n InitialNetwrok \
 # Refernece 
   * [Containerize a .NET app](https://learn.microsoft.com/en-us/dotnet/core/docker/build-container?tabs=windows)
   * [Docker CLI commands](https://docs.docker.com/engine/reference/commandline) 
+  * [Azure container instance - logic app integration](https://github.com/Azure-Samples/aci-logicapps-integration)
+  * [Deploying an image from Azure Container Registry with Azure Logic Apps](https://soltisweb.com/blog/detail/2021-09-01-deployinganimagefromazurecontainerregistrytoazurelogicapps)
