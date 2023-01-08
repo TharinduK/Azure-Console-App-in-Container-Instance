@@ -5,91 +5,66 @@
     "_generator": {
       "name": "bicep",
       "version": "0.12.1.58429",
-      "templateHash": "10110470286831653555"
+      "templateHash": "7123195729929083214"
     }
   },
   "parameters": {
-    "bradyTags": {
-      "type": "object",
-      "defaultValue": {
-        "platform": "p",
-        "env": "e",
-        "subsystem": "s",
-        "budget": "b"
-      }
+    "PlatformTag": {
+      "type": "string",
+      "defaultValue": "p"
+    },
+    "EnvironmentTag": {
+      "type": "string",
+      "defaultValue": "e"
+    },
+    "SubsystemTag": {
+      "type": "string",
+      "defaultValue": "s"
+    },
+    "ContainerInstanceName": {
+      "type": "string",
+      "defaultValue": "testci"
+    },
+    "ContainerImageName": {
+      "type": "string",
+      "defaultValue": "helloconsole:latest"
+    },
+    "LogicAppName": {
+      "type": "string"
     },
     "location": {
       "type": "string",
       "defaultValue": "[resourceGroup().location]"
     },
-    "subscriptionId": {
-      "type": "string",
-      "defaultValue": "[subscription().id]"
-    },
-    "conn_name": {
+    "ContainerRegistryConnectionName": {
       "type": "string",
       "defaultValue": "aci-1"
     },
-    "logic_name": {
+    "ContainerRegistryName": {
       "type": "string"
-    },
-    "acr_name": {
-      "type": "string"
-    },
-    "registry_pw": {
-      "type": "string",
-      "defaultValue": "enter password"
-    },
-    "registry_fqdn": {
-      "type": "string",
-      "defaultValue": "[format('{0}.azurecr.io', parameters('acr_name'))]"
-    },
-    "registry_un": {
-      "type": "string",
-      "defaultValue": "[parameters('acr_name')]"
-    },
-    "ci_name": {
-      "type": "string",
-      "defaultValue": "testci"
-    },
-    "ci_image_name": {
-      "type": "string",
-      "defaultValue": "[format('{0}.azurecr.io/helloconsole:latest', parameters('acr_name'))]"
-    },
-    "ci_path": {
-      "type": "string",
-      "defaultValue": "[format('{0}/providers/Microsoft.ContainerInstance/containerGroups/@{{encodeURIComponent(variables(''ci_name''))}}', resourceGroup().id)]"
-    },
-    "containerGroups_encodeURIComponent_body_Create_or_update_a_container_group_name_externalid": {
-      "type": "string",
-      "defaultValue": "[format('{0}/providers/Microsoft.ContainerInstance/containerGroups/@{{encodeURIComponent(body(''Create_or_update_a_container_group'')?[''name''])}}', resourceGroup().id)]"
     }
+  },
+  "variables": {
+    "ci_create_aci_path": "[format('{0}/providers/Microsoft.ContainerInstance/containerGroups/@{{encodeURIComponent(variables(''ci_name''))}}', resourceGroup().id)]",
+    "ci_getproperties_path": "[format('{0}/providers/Microsoft.ContainerInstance/containerGroups/@{{encodeURIComponent(body(''Create_or_update_a_container_group'')?[''name''])}}', resourceGroup().id)]"
   },
   "resources": [
     {
       "type": "Microsoft.ContainerRegistry/registries",
       "apiVersion": "2022-02-01-preview",
-      "name": "[parameters('acr_name')]",
+      "name": "[parameters('ContainerRegistryName')]",
       "location": "[parameters('location')]",
       "tags": {
-        "Platform": "[parameters('bradyTags').platform]",
-        "Env": "[parameters('bradyTags').env]",
-        "SubSystem": "[parameters('bradyTags').subSystem]"
+        "Platform": "[parameters('PlatformTag')]",
+        "Env": "[parameters('EnvironmentTag')]",
+        "SubSystem": "[parameters('SubsystemTag')]"
       },
       "sku": {
-        "name": "Standard",
-        "tier": "Standard"
+        "name": "Standard"
       },
       "properties": {
         "adminUserEnabled": true,
         "policies": {
-          "quarantinePolicy": {
-            "status": "disabled"
-          },
-          "trustPolicy": {
-            "type": "Notary",
-            "status": "disabled"
-          },
           "retentionPolicy": {
             "days": 7,
             "status": "disabled"
@@ -117,9 +92,8 @@
     {
       "type": "Microsoft.Web/connections",
       "apiVersion": "2016-06-01",
-      "name": "[parameters('conn_name')]",
+      "name": "[parameters('ContainerRegistryConnectionName')]",
       "location": "[parameters('location')]",
-      "kind": "V1",
       "properties": {
         "displayName": "aci",
         "statuses": [
@@ -149,12 +123,12 @@
     {
       "type": "Microsoft.Logic/workflows",
       "apiVersion": "2017-07-01",
-      "name": "[parameters('logic_name')]",
+      "name": "[parameters('LogicAppName')]",
       "location": "[parameters('location')]",
       "tags": {
-        "Platform": "[parameters('bradyTags').platform]",
-        "Env": "[parameters('bradyTags').env]",
-        "SubSystem": "[parameters('bradyTags').subSystem]"
+        "Platform": "[parameters('PlatformTag')]",
+        "Env": "[parameters('EnvironmentTag')]",
+        "SubSystem": "[parameters('SubsystemTag')]"
       },
       "properties": {
         "state": "Enabled",
@@ -210,9 +184,9 @@
                     ],
                     "imageRegistryCredentials": [
                       {
-                        "password": "[parameters('registry_pw')]",
-                        "server": "[parameters('registry_fqdn')]",
-                        "username": "[parameters('registry_un')]"
+                        "password": "[listCredentials(resourceId('Microsoft.ContainerRegistry/registries', parameters('ContainerRegistryName')), '2022-02-01-preview').passwords[0].value]",
+                        "server": "[reference(resourceId('Microsoft.ContainerRegistry/registries', parameters('ContainerRegistryName')), '2022-02-01-preview').loginServer]",
+                        "username": "[listCredentials(resourceId('Microsoft.ContainerRegistry/registries', parameters('ContainerRegistryName')), '2022-02-01-preview').username]"
                       }
                     ],
                     "osType": "Linux",
@@ -226,7 +200,7 @@
                   }
                 },
                 "method": "put",
-                "path": "[parameters('ci_path')]",
+                "path": "[variables('ci_create_aci_path')]",
                 "queries": {
                   "x-ms-api-version": "2019-12-01"
                 }
@@ -250,7 +224,7 @@
                           }
                         },
                         "method": "delete",
-                        "path": "[parameters('ci_path')]",
+                        "path": "[variables('ci_create_aci_path')]",
                         "queries": {
                           "x-ms-api-version": "2019-12-01"
                         }
@@ -266,7 +240,7 @@
                           }
                         },
                         "method": "get",
-                        "path": "[format('{0}/containers/@{{encodeURIComponent(variables(''ci_name''))}}/logs', parameters('ci_path'))]",
+                        "path": "[format('{0}/containers/@{{encodeURIComponent(variables(''ci_name''))}}/logs', variables('ci_create_aci_path'))]",
                         "queries": {
                           "x-ms-api-version": "2019-12-01"
                         }
@@ -314,7 +288,7 @@
                       }
                     },
                     "method": "get",
-                    "path": "[parameters('containerGroups_encodeURIComponent_body_Create_or_update_a_container_group_name_externalid')]",
+                    "path": "[variables('ci_getproperties_path')]",
                     "queries": {
                       "x-ms-api-version": "2019-12-01"
                     }
@@ -345,7 +319,7 @@
                   {
                     "name": "ci_name",
                     "type": "string",
-                    "value": "[parameters('ci_name')]"
+                    "value": "[parameters('ContainerInstanceName')]"
                   }
                 ]
               }
@@ -362,7 +336,7 @@
                   {
                     "name": "image",
                     "type": "string",
-                    "value": "[parameters('ci_image_name')]"
+                    "value": "[format('{0}/{1}', reference(resourceId('Microsoft.ContainerRegistry/registries', parameters('ContainerRegistryName')), '2022-02-01-preview').loginServer, parameters('ContainerImageName'))]"
                   }
                 ]
               }
@@ -387,7 +361,7 @@
           "$connections": {
             "value": {
               "aci": {
-                "connectionId": "[resourceId('Microsoft.Web/connections', parameters('conn_name'))]",
+                "connectionId": "[resourceId('Microsoft.Web/connections', parameters('ContainerRegistryConnectionName'))]",
                 "connectionName": "aci-1",
                 "id": "/subscriptions/708854ac-164b-4d34-a0b9-69ff53d7704d/providers/Microsoft.Web/locations/centralus/managedApis/aci"
               }
@@ -396,7 +370,8 @@
         }
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Web/connections', parameters('conn_name'))]"
+        "[resourceId('Microsoft.ContainerRegistry/registries', parameters('ContainerRegistryName'))]",
+        "[resourceId('Microsoft.Web/connections', parameters('ContainerRegistryConnectionName'))]"
       ]
     }
   ]

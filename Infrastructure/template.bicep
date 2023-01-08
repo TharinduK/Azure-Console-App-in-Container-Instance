@@ -1,45 +1,34 @@
-param bradyTags object = {
-  platform: 'p'
-  env: 'e'
-  subsystem: 's'
-  budget: 'b'
-}
+param PlatformTag string = 'p'
+param EnvironmentTag string = 'e'
+param SubsystemTag string = 's'
+
+param ContainerInstanceName string = 'testci'
+param ContainerImageName string = 'helloconsole:latest'
+param LogicAppName string
+
 param location string = resourceGroup().location
-param subscriptionId string = subscription().id
-param conn_name string = 'aci-1'
-param logic_name string
-param acr_name string 
-param registry_pw string = 'enter password'
-param registry_fqdn string = '${acr_name}.azurecr.io'
-param registry_un string = acr_name
-param ci_name string = 'testci'
-param ci_image_name string = '${acr_name}.azurecr.io/helloconsole:latest'
-param ci_path string    = '${resourceGroup().id}/providers/Microsoft.ContainerInstance/containerGroups/@{encodeURIComponent(variables(\'ci_name\'))}'
-param containerGroups_encodeURIComponent_body_Create_or_update_a_container_group_name_externalid string = '${resourceGroup().id}/providers/Microsoft.ContainerInstance/containerGroups/@{encodeURIComponent(body(\'Create_or_update_a_container_group\')?[\'name\'])}'
+param ContainerRegistryConnectionName string = 'aci-1'
+
+param ContainerRegistryName string 
+
+var ci_create_aci_path = '${resourceGroup().id}/providers/Microsoft.ContainerInstance/containerGroups/@{encodeURIComponent(variables(\'ci_name\'))}'
+var ci_getproperties_path = '${resourceGroup().id}/providers/Microsoft.ContainerInstance/containerGroups/@{encodeURIComponent(body(\'Create_or_update_a_container_group\')?[\'name\'])}'
 
 resource acr 'Microsoft.ContainerRegistry/registries@2022-02-01-preview' = {
-  name: acr_name
+  name: ContainerRegistryName
   location: location
   tags: {
-    Platform: bradyTags.platform
-    Env: bradyTags.env
-    SubSystem: bradyTags.subSystem
+    Platform: PlatformTag
+    Env: EnvironmentTag
+    SubSystem: SubsystemTag
   }
   sku: {
     name: 'Standard'
-    tier: 'Standard'
   }
   properties: {
     adminUserEnabled: true
     policies: {
-      quarantinePolicy: {
-        status: 'disabled'
-      }
-      trustPolicy: {
-        type: 'Notary'
-        status: 'disabled'
-      }
-      retentionPolicy: {
+       retentionPolicy: {
         days: 7
         status: 'disabled'
       }
@@ -65,9 +54,8 @@ resource acr 'Microsoft.ContainerRegistry/registries@2022-02-01-preview' = {
 }
 
 resource connections_aci 'Microsoft.Web/connections@2016-06-01' = {
-  name: conn_name
+  name: ContainerRegistryConnectionName
   location: location
-  kind: 'V1'
   properties: {
     displayName: 'aci'
     statuses: [
@@ -97,12 +85,12 @@ resource connections_aci 'Microsoft.Web/connections@2016-06-01' = {
 }
 
 resource logic 'Microsoft.Logic/workflows@2017-07-01' = {
-  name: logic_name
+  name: LogicAppName
   location: location
   tags: {
-    Platform: bradyTags.platform
-    Env: bradyTags.env
-    SubSystem: bradyTags.subSystem
+    Platform: PlatformTag
+    Env: EnvironmentTag
+    SubSystem: SubsystemTag
   }
   properties: {
     state: 'Enabled'
@@ -160,9 +148,9 @@ resource logic 'Microsoft.Logic/workflows@2017-07-01' = {
                 ]
                 imageRegistryCredentials: [
                   {
-                    password: registry_pw
-                    server: registry_fqdn
-                    username: registry_un
+                    password: acr.listCredentials().passwords[0].value
+                    server:acr.properties.loginServer
+                    username: acr.listCredentials().username
                   }
                 ]
                 osType: 'Linux'
@@ -176,7 +164,7 @@ resource logic 'Microsoft.Logic/workflows@2017-07-01' = {
               }
             }
             method: 'put'
-            path: ci_path
+            path: ci_create_aci_path
             queries: {
               'x-ms-api-version': '2019-12-01'
             }
@@ -200,7 +188,7 @@ resource logic 'Microsoft.Logic/workflows@2017-07-01' = {
                       }
                     }
                     method: 'delete'
-                    path: ci_path
+                    path: ci_create_aci_path
                     queries: {
                       'x-ms-api-version': '2019-12-01'
                     }
@@ -217,7 +205,7 @@ resource logic 'Microsoft.Logic/workflows@2017-07-01' = {
                       }
                     }
                     method: 'get'
-                    path: '${ci_path}/containers/@{encodeURIComponent(variables(\'ci_name\'))}/logs'
+                    path: '${ci_create_aci_path}/containers/@{encodeURIComponent(variables(\'ci_name\'))}/logs'
                     queries: {
                       'x-ms-api-version': '2019-12-01'
                     }
@@ -267,7 +255,7 @@ resource logic 'Microsoft.Logic/workflows@2017-07-01' = {
                   }
                 }
                 method: 'get'
-                path: containerGroups_encodeURIComponent_body_Create_or_update_a_container_group_name_externalid
+                path: ci_getproperties_path
                 queries: {
                   'x-ms-api-version': '2019-12-01'
                 }
@@ -298,7 +286,7 @@ resource logic 'Microsoft.Logic/workflows@2017-07-01' = {
               {
                 name: 'ci_name'
                 type: 'string'
-                value: ci_name
+                value: ContainerInstanceName
               }
             ]
           }
@@ -315,7 +303,7 @@ resource logic 'Microsoft.Logic/workflows@2017-07-01' = {
               {
                 name: 'image'
                 type: 'string'
-                value: ci_image_name
+                value: '${acr.properties.loginServer}/${ContainerImageName}'
               }
             ]
           }
