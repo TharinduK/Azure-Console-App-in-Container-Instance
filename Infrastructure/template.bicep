@@ -5,18 +5,18 @@ param SubsystemTag string = 's'
 param ContainerInstanceName string = 'testci'
 param ContainerImageName string = 'helloconsole:latest'
 param LogicAppName string
-
-param location string = resourceGroup().location
+param LogicAppLocation string = resourceGroup().location
 param ContainerRegistryConnectionName string = 'aci-1'
 
 param ContainerRegistryName string 
+param ContainerRegistryLocation string = resourceGroup().location
 
 var ci_create_aci_path = '${resourceGroup().id}/providers/Microsoft.ContainerInstance/containerGroups/@{encodeURIComponent(variables(\'ci_name\'))}'
 var ci_getproperties_path = '${resourceGroup().id}/providers/Microsoft.ContainerInstance/containerGroups/@{encodeURIComponent(body(\'Create_or_update_a_container_group\')?[\'name\'])}'
 
 resource acr 'Microsoft.ContainerRegistry/registries@2022-02-01-preview' = {
   name: ContainerRegistryName
-  location: location
+  location: ContainerRegistryLocation
   tags: {
     Platform: PlatformTag
     Env: EnvironmentTag
@@ -55,7 +55,7 @@ resource acr 'Microsoft.ContainerRegistry/registries@2022-02-01-preview' = {
 
 resource connections_aci 'Microsoft.Web/connections@2016-06-01' = {
   name: ContainerRegistryConnectionName
-  location: location
+  location: LogicAppLocation
   properties: {
     displayName: 'aci'
     statuses: [
@@ -77,7 +77,7 @@ resource connections_aci 'Microsoft.Web/connections@2016-06-01' = {
       description: 'Easily run containers on Azure with a single command. Create container groups, get the logs of a container and more.'
       iconUri: 'https://connectoricons-prod.azureedge.net/releases/v1.0.1479/1.0.1479.2452/aci/icon.png'
       brandColor: '#0089D0'
-      id: '/subscriptions/708854ac-164b-4d34-a0b9-69ff53d7704d/providers/Microsoft.Web/locations/centralus/managedApis/aci'
+      id: '/subscriptions/${subscription().subscriptionId}/providers/Microsoft.Web/locations/${LogicAppLocation}/managedApis/aci'
       type: 'Microsoft.Web/locations/managedApis'
     }
     testLinks: []
@@ -86,7 +86,7 @@ resource connections_aci 'Microsoft.Web/connections@2016-06-01' = {
 
 resource logic 'Microsoft.Logic/workflows@2017-07-01' = {
   name: LogicAppName
-  location: location
+  location: LogicAppLocation
   tags: {
     Platform: PlatformTag
     Env: EnvironmentTag
@@ -124,7 +124,7 @@ resource logic 'Microsoft.Logic/workflows@2017-07-01' = {
           type: 'ApiConnection'
           inputs: {
             body: {
-              location: location
+              location: LogicAppLocation
               properties: {
                 containers: [
                   {
@@ -332,7 +332,7 @@ resource logic 'Microsoft.Logic/workflows@2017-07-01' = {
           aci: {
             connectionId: connections_aci.id
             connectionName: 'aci-1'
-            id: '/subscriptions/708854ac-164b-4d34-a0b9-69ff53d7704d/providers/Microsoft.Web/locations/centralus/managedApis/aci'
+            id: '/subscriptions/${subscription().subscriptionId}/providers/Microsoft.Web/locations/${LogicAppLocation}/managedApis/aci'
           }
         }
       }
