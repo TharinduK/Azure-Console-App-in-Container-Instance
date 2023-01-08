@@ -15,7 +15,7 @@
   * Hosting Azure containers in Linux is less expensive 
   * Allow using system identity to access container image 
 
-[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://raw.githubusercontent.com/TharinduK/AzureExperiments-console-in-ci/main/Infrastructure/template.json)
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FTharinduK%2FAzureExperiments-console-in-ci%2Fmain%2FInfrastructure%2Ftemplate.json)
 ## Experiment 
 
 Check docker and dotnet CLI version 
