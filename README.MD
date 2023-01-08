@@ -9,24 +9,21 @@
   * Docker v1.23.2
   * vscode-icons v12.0.1
   * YAML v1.10.1
-  
+
+## Decisions
+* Using Linux containers insted of Windows 
+  * Hosting Azure containers in Linux is less expensive 
+  * Allow using system identity to access container image 
 ## Experiment 
 
 1. Check docker and dot net version 
 
-*Docker Version*
 ```shell
+# Docker Version
 docker --version 
-```
-> output :
-> Docker version 20.10.17, build 100c701
 
-*dotnet sdk version*
-```shell
+#dotnet sdk version
 dotnet --version 
-```
-> output :
-> 7.0.101
 
 ### Create console app to run in docker 
 1. Create .net application using vs code
@@ -39,23 +36,26 @@ dotnet new
 ```shell
 # dotnet new <short name> -n <project name> -o <project folder>
 dotnet new console -n helloConsole -o helloCode.console
+dotnet new gitignore
 ```
 *Open project in vs code*
 ```shell
 code .
 ```
-2. Update code
+2. Update code to crate sample application that takes value from environment variable 
 ``` cSharp
-// See https://aka.ms/new-console-template for more information
-Console.WriteLine("Hello, World!");
+Console.WriteLine("Start long running app");
 
 var counter = 0;
-var max = args.Length != 0 ? Convert.ToInt32(args[0]) : -1;
+var maxCount = Environment.GetEnvironmentVariable("max_count");
+var max = string.IsNullOrEmpty(maxCount) ?-1: Convert.ToInt32(maxCount);
 while (max == -1 || counter < max)
 {
     Console.WriteLine($"Counter: {++counter}");
     await Task.Delay(TimeSpan.FromMilliseconds(1_000));
 }
+
+Console.WriteLine("End long running app");
 ```
 3. Add debugging files 
    * "Run and Debug" extension >> "create a launch.json file > .NET 5+ and .NET Core"
@@ -157,6 +157,7 @@ docker push $registry.azurecr.io/$image:$ver
 ### Create az container instance using logic app image
 REf:https://github.com/Azure-Samples/aci-logicapps-integration 
 https://soltisweb.com/blog/detail/2021-09-01-deployinganimagefromazurecontainerregistrytoazurelogicapps
+https://github.com/Azure-Samples/aci-logicapps-integration
 1. Create logic app with managed identity 
 2. 
 
