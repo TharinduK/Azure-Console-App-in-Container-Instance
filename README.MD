@@ -16,8 +16,7 @@
   * Allow using system identity to access container image 
 ## Experiment 
 
-1. Check docker and dot net version 
-
+Check docker and dotnet CLI version 
 ```shell
 # Docker Version
 docker --version 
@@ -113,13 +112,13 @@ docker build -t $image:$ver -f ./App/Dockerfile  .
 ```
 2. Setup script variables 
 ```shell
-registry=testacrtk #tkwuscr
+registry=tkwuscr3 #tkwuscr
 #repo=tk
 image=helloconsole
 ver=latest
 
 sub=708854ac-164b-4d34-a0b9-69ff53d7704d
-rg=tkcr2-rg #tkcr-rg
+rg=tkcr3-rg #tkcr-rg
 
 ```
 
@@ -159,18 +158,18 @@ https://github.com/Azure-Samples/aci-logicapps-integration
 1. Create logic app with managed identity 
 
 ```shell
-registry=tkwuscr
+registry=tkwuscr3
 #repo=tk
 image=helloconsole
 ver=latest
 
 sub=708854ac-164b-4d34-a0b9-69ff53d7704d
-rg=tkcr2-rg
-registry=tkwuscr
+rg=tkcr3-rg
 l=centralus
 ```
 
---create rg
+--create infrastructure resouces
+```shell
 az group create -n $rg -l $l
 
 az deployment group create -n InitialNetwrok \
@@ -178,6 +177,7 @@ az deployment group create -n InitialNetwrok \
 --mode Incremental \
 --template-file template.bicep \
 --parameters parameters.json 
+```
 
 ## To Do
 1. Investigate how to use managed identity for the logic app to pull image from Azure Container Registry 

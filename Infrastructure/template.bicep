@@ -1,12 +1,25 @@
+param bradyTags object = {
+  platform: 'p'
+  env: 'e'
+  subsystem: 's'
+  budget: 'b'
+}
+//resourceGroup().
+param location string = resourceGroup().location
 param conn_name string = 'aci-1'
-param logic_name string = 'tklogicapptodelete'
-param acr_name string = 'tkwuscr'
-param containerGroups_encodeURIComponent_variables_ci_name_externalid string = '/subscriptions/@{encodeURIComponent(\'708854ac-164b-4d34-a0b9-69ff53d7704d\')}/resourceGroups/@{encodeURIComponent(\'tkcr-rg\')}/providers/Microsoft.ContainerInstance/containerGroups/@{encodeURIComponent(variables(\'ci_name\'))}'
-param containerGroups_encodeURIComponent_body_Create_or_update_a_container_group_name_externalid string = '/subscriptions/@{encodeURIComponent(\'708854ac-164b-4d34-a0b9-69ff53d7704d\')}/resourceGroups/@{encodeURIComponent(\'tkcr-rg\')}/providers/Microsoft.ContainerInstance/containerGroups/@{encodeURIComponent(body(\'Create_or_update_a_container_group\')?[\'name\'])}'
+param logic_name string
+param acr_name string 
+param registry_pw string = '+6RhV7bTWIrAAuVAkvN7hOLO5qZ6PK66nzm45kCqwd+ACRDv1sUG'
+param registry_fqdn string = '${acr_name}.azurecr.io'
+param registry_un string = acr_name
+param ci_name string = 'testci'
+param ci_image_name string = '${acr_name}.azurecr.io/helloconsole:latest'
+param ci_path string    = '${resourceGroup().id}/providers/Microsoft.ContainerInstance/containerGroups/@{encodeURIComponent(variables(\'ci_name\'))}'
+param containerGroups_encodeURIComponent_body_Create_or_update_a_container_group_name_externalid string = '${resourceGroup().id}/providers/Microsoft.ContainerInstance/containerGroups/@{encodeURIComponent(body(\'Create_or_update_a_container_group\')?[\'name\'])}'
 
 resource acr 'Microsoft.ContainerRegistry/registries@2022-02-01-preview' = {
   name: acr_name
-  location: 'westus'
+  location: location
   sku: {
     name: 'Standard'
     tier: 'Standard'
@@ -48,7 +61,7 @@ resource acr 'Microsoft.ContainerRegistry/registries@2022-02-01-preview' = {
 
 resource connections_aci_1_name_resource 'Microsoft.Web/connections@2016-06-01' = {
   name: conn_name
-  location: 'centralus'
+  location: location
   kind: 'V1'
   properties: {
     displayName: 'Ruchira_Kumarasinghe@bradycorp.com'
@@ -78,47 +91,10 @@ resource connections_aci_1_name_resource 'Microsoft.Web/connections@2016-06-01' 
   }
 }
 
-resource registries_tkwuscr_name_repositories_admin 'Microsoft.ContainerRegistry/registries/scopeMaps@2022-02-01-preview' = {
-  parent: acr
-  name: '_repositories_admin'
-  properties: {
-    description: 'Can perform all read, write and delete operations on the registry'
-    actions: [
-      'repositories/*/metadata/read'
-      'repositories/*/metadata/write'
-      'repositories/*/content/read'
-      'repositories/*/content/write'
-      'repositories/*/content/delete'
-    ]
-  }
-}
-
-resource registries_tkwuscr_name_repositories_pull 'Microsoft.ContainerRegistry/registries/scopeMaps@2022-02-01-preview' = {
-  parent: acr
-  name: '_repositories_pull'
-  properties: {
-    description: 'Can pull any repository of the registry'
-    actions: [
-      'repositories/*/content/read'
-    ]
-  }
-}
-
-resource registries_tkwuscr_name_repositories_push 'Microsoft.ContainerRegistry/registries/scopeMaps@2022-02-01-preview' = {
-  parent: acr
-  name: '_repositories_push'
-  properties: {
-    description: 'Can push to any repository of the registry'
-    actions: [
-      'repositories/*/content/read'
-      'repositories/*/content/write'
-    ]
-  }
-}
 
 resource logic 'Microsoft.Logic/workflows@2017-07-01' = {
   name: logic_name
-  location: 'centralus'
+  location: location
   identity: {
     type: 'SystemAssigned'
   }
@@ -147,14 +123,14 @@ resource logic 'Microsoft.Logic/workflows@2017-07-01' = {
       actions: {
         Create_or_update_a_container_group: {
           runAfter: {
-            'acr-pw': [
+            'image-name': [
               'Succeeded'
             ]
           }
           type: 'ApiConnection'
           inputs: {
             body: {
-              location: 'west us'
+              location: location
               properties: {
                 containers: [
                   {
@@ -178,9 +154,9 @@ resource logic 'Microsoft.Logic/workflows@2017-07-01' = {
                 ]
                 imageRegistryCredentials: [
                   {
-                    password: 'WbpzAGPQvRaYFmFcjdpj9gWYRRiMXagjRCzVCY+4v4+ACRCu7vLu'
-                    server: 'tkwuscr.azurecr.io'
-                    username: 'tkwuscr'
+                    password: registry_pw
+                    server: registry_fqdn
+                    username: registry_un
                   }
                 ]
                 osType: 'Linux'
@@ -194,7 +170,7 @@ resource logic 'Microsoft.Logic/workflows@2017-07-01' = {
               }
             }
             method: 'put'
-            path: containerGroups_encodeURIComponent_variables_ci_name_externalid
+            path: ci_path
             queries: {
               'x-ms-api-version': '2019-12-01'
             }
@@ -218,7 +194,7 @@ resource logic 'Microsoft.Logic/workflows@2017-07-01' = {
                       }
                     }
                     method: 'delete'
-                    path: containerGroups_encodeURIComponent_variables_ci_name_externalid
+                    path: ci_path
                     queries: {
                       'x-ms-api-version': '2019-12-01'
                     }
@@ -235,7 +211,7 @@ resource logic 'Microsoft.Logic/workflows@2017-07-01' = {
                       }
                     }
                     method: 'get'
-                    path: '${containerGroups_encodeURIComponent_variables_ci_name_externalid}/containers/@{encodeURIComponent(variables(\'ci_name\'))}/logs'
+                    path: '${ci_path}/containers/@{encodeURIComponent(variables(\'ci_name\'))}/logs'
                     queries: {
                       'x-ms-api-version': '2019-12-01'
                     }
@@ -304,57 +280,6 @@ resource logic 'Microsoft.Logic/workflows@2017-07-01' = {
           }
           type: 'Until'
         }
-        'acr-pw': {
-          runAfter: {
-            'acr-un': [
-              'Succeeded'
-            ]
-          }
-          type: 'InitializeVariable'
-          inputs: {
-            variables: [
-              {
-                name: 'acr-pw'
-                type: 'string'
-                value: 'WbpzAGPQvRaYFmFcjdpj9gWYRRiMXagjRCzVCY+4v4+ACRCu7vLu'
-              }
-            ]
-          }
-        }
-        'acr-server-name': {
-          runAfter: {
-            'image-name': [
-              'Succeeded'
-            ]
-          }
-          type: 'InitializeVariable'
-          inputs: {
-            variables: [
-              {
-                name: 'acr-server-name'
-                type: 'string'
-                value: 'tkwuscr.azurecr.io'
-              }
-            ]
-          }
-        }
-        'acr-un': {
-          runAfter: {
-            'acr-server-name': [
-              'Succeeded'
-            ]
-          }
-          type: 'InitializeVariable'
-          inputs: {
-            variables: [
-              {
-                name: 'acr-un'
-                type: 'string'
-                value: 'tkwuscr'
-              }
-            ]
-          }
-        }
         'ci-name': {
           runAfter: {
             loopCount: [
@@ -367,7 +292,7 @@ resource logic 'Microsoft.Logic/workflows@2017-07-01' = {
               {
                 name: 'ci_name'
                 type: 'string'
-                value: 'test1-ci'
+                value: ci_name
               }
             ]
           }
@@ -384,7 +309,7 @@ resource logic 'Microsoft.Logic/workflows@2017-07-01' = {
               {
                 name: 'image'
                 type: 'string'
-                value: 'tkwuscr.azurecr.io/helloconsole:latest'
+                value: ci_image_name
               }
             ]
           }
