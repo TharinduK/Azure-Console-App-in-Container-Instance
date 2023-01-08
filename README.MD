@@ -24,6 +24,7 @@ docker --version
 
 #dotnet sdk version
 dotnet --version 
+```
 
 ### Create console app to run in docker 
 1. Create .net application using vs code
@@ -76,10 +77,15 @@ Docker file
 FROM mcr.microsoft.com/dotnet/runtime:6.0 AS base
 WORKDIR /app
 
+# Creates a non-root user with an explicit UID and adds permission to access the /app folder
+# For more info, please refer to https://aka.ms/vscode-docker-dotnet-configure-containers
+RUN adduser -u 5678 --disabled-password --gecos "" appuser && chown -R appuser /app
+USER appuser
+
 FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
 WORKDIR /src
 COPY ["App/DotNet.Docker~.csproj", "App/"]
-RUN dotnet restore "App\DotNet.Docker~.csproj"
+RUN dotnet restore "App/DotNet.Docker~.csproj"
 COPY . .
 WORKDIR "/src/App"
 RUN dotnet build "DotNet.Docker~.csproj" -c Release -o /app/build
@@ -105,22 +111,21 @@ image=helloconsole
 ver=latest
 docker build -t $image:$ver -f ./App/Dockerfile  .
 ```
-
-2. Run project on docker desktop 
+2. Setup script variables 
 ```shell
+registry=testacrtk #tkwuscr
+#repo=tk
 image=helloconsole
 ver=latest
-docker run $image 5
+
+sub=708854ac-164b-4d34-a0b9-69ff53d7704d
+rg=tkcr2-rg #tkcr-rg
+
 ```
 
 3. Tag local docker image so it can be pushed to docker registry 
 ```shell
-#docker tag SOURCE_IMAGE[:TAG] TARGET_IMAGE[:TAG]
-registry=tkwuscr
-#repo=tk
-image=helloconsole
-ver=latest
-#docker tag $image:latest $registry.azurecr.io/$repo/$image:$ver
+#docker tag source_image[:tag] target_image[:tag]
 docker tag $image:latest $registry.azurecr.io/$image:$ver
 ```
 4. log in to Azure 
@@ -130,15 +135,12 @@ az login
 
 5. Set context to correct subscription
 ```shell
-sub=708854ac-164b-4d34-a0b9-69ff53d7704d
 az account set -s $sub
 az account list -o table
 ```
 
 6. Get admin password for ACR and log in to container registry 
 ```shell
-registry=tkwuscr
-rg=tkcr-rg
 un=$(az acr credential show -n $registry -g $rg --query username -o tsv)
 pw=$(az acr credential show -n $registry -g $rg --query passwords[0].value -o tsv)
 docker login $registry.azurecr.io -u $un -p $pw
@@ -147,10 +149,6 @@ docker login $registry.azurecr.io -u $un -p $pw
 5. Push image to registry 
 ```shell
 # docker push [docker registry name]/[repo name]/[Image name]:[version]
-registry=tkwuscr
-#repo=tk
-image=helloconsole
-ver=latest
 docker push $registry.azurecr.io/$image:$ver
 ```
 
@@ -159,7 +157,30 @@ REf:https://github.com/Azure-Samples/aci-logicapps-integration
 https://soltisweb.com/blog/detail/2021-09-01-deployinganimagefromazurecontainerregistrytoazurelogicapps
 https://github.com/Azure-Samples/aci-logicapps-integration
 1. Create logic app with managed identity 
-2. 
+
+```shell
+registry=tkwuscr
+#repo=tk
+image=helloconsole
+ver=latest
+
+sub=708854ac-164b-4d34-a0b9-69ff53d7704d
+rg=tkcr2-rg
+registry=tkwuscr
+l=centralus
+```
+
+--create rg
+az group create -n $rg -l $l
+
+az deployment group create -n InitialNetwrok \
+-g $rg \
+--mode Incremental \
+--template-file template.bicep \
+--parameters parameters.json 
+
+## To Do
+1. Investigate how to use managed identity for the logic app to pull image from Azure Container Registry 
 
 ### Create az container instance using az CLI from image
 1. log in to Azure 

@@ -1,0 +1,289 @@
+{
+    "definition": {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "actions": {
+            "Create_or_update_a_container_group": {
+                "inputs": {
+                    "body": {
+                        "location": "west us",
+                        "properties": {
+                            "containers": [
+                                {
+                                    "name": "@variables('ci_name')",
+                                    "properties": {
+                                        "environmentVariables": [
+                                            {
+                                                "name": "max_count",
+                                                "value": "@{variables('loopCount')}"
+                                            }
+                                        ],
+                                        "image": "@variables('image')",
+                                        "resources": {
+                                            "requests": {
+                                                "cpu": 1,
+                                                "memoryInGB": 3.5
+                                            }
+                                        }
+                                    }
+                                }
+                            ],
+                            "imageRegistryCredentials": [
+                                {
+                                    "password": "WbpzAGPQvRaYFmFcjdpj9gWYRRiMXagjRCzVCY+4v4+ACRCu7vLu",
+                                    "server": "tkwuscr.azurecr.io",
+                                    "username": "tkwuscr"
+                                }
+                            ],
+                            "osType": "Linux",
+                            "restartPolicy": "OnFailure",
+                            "sku": "Standard"
+                        }
+                    },
+                    "host": {
+                        "connection": {
+                            "name": "@parameters('$connections')['aci']['connectionId']"
+                        }
+                    },
+                    "method": "put",
+                    "path": "/subscriptions/@{encodeURIComponent('708854ac-164b-4d34-a0b9-69ff53d7704d')}/resourceGroups/@{encodeURIComponent('tkcr-rg')}/providers/Microsoft.ContainerInstance/containerGroups/@{encodeURIComponent(variables('ci_name'))}",
+                    "queries": {
+                        "x-ms-api-version": "2019-12-01"
+                    }
+                },
+                "runAfter": {
+                    "acr-pw": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "ApiConnection"
+            },
+            "Until": {
+                "actions": {
+                    "Condition": {
+                        "actions": {
+                            "Delete_a_container_group": {
+                                "inputs": {
+                                    "host": {
+                                        "connection": {
+                                            "name": "@parameters('$connections')['aci']['connectionId']"
+                                        }
+                                    },
+                                    "method": "delete",
+                                    "path": "/subscriptions/@{encodeURIComponent('708854ac-164b-4d34-a0b9-69ff53d7704d')}/resourceGroups/@{encodeURIComponent('tkcr-rg')}/providers/Microsoft.ContainerInstance/containerGroups/@{encodeURIComponent(variables('ci_name'))}",
+                                    "queries": {
+                                        "x-ms-api-version": "2019-12-01"
+                                    }
+                                },
+                                "runAfter": {
+                                    "Get_logs_from_a_container_instance": [
+                                        "Succeeded"
+                                    ]
+                                },
+                                "type": "ApiConnection"
+                            },
+                            "Get_logs_from_a_container_instance": {
+                                "inputs": {
+                                    "host": {
+                                        "connection": {
+                                            "name": "@parameters('$connections')['aci']['connectionId']"
+                                        }
+                                    },
+                                    "method": "get",
+                                    "path": "/subscriptions/@{encodeURIComponent('708854ac-164b-4d34-a0b9-69ff53d7704d')}/resourceGroups/@{encodeURIComponent('tkcr-rg')}/providers/Microsoft.ContainerInstance/containerGroups/@{encodeURIComponent(variables('ci_name'))}/containers/@{encodeURIComponent(variables('ci_name'))}/logs",
+                                    "queries": {
+                                        "x-ms-api-version": "2019-12-01"
+                                    }
+                                },
+                                "runAfter": {},
+                                "type": "ApiConnection"
+                            }
+                        },
+                        "else": {
+                            "actions": {
+                                "Delay": {
+                                    "inputs": {
+                                        "interval": {
+                                            "count": 10,
+                                            "unit": "Second"
+                                        }
+                                    },
+                                    "runAfter": {},
+                                    "type": "Wait"
+                                }
+                            }
+                        },
+                        "expression": {
+                            "and": [
+                                {
+                                    "equals": [
+                                        "@body('Get_properties_of_a_container_group')?['properties']?['instanceView']?['state']",
+                                        "Succeeded"
+                                    ]
+                                }
+                            ]
+                        },
+                        "runAfter": {
+                            "Get_properties_of_a_container_group": [
+                                "Succeeded"
+                            ]
+                        },
+                        "type": "If"
+                    },
+                    "Get_properties_of_a_container_group": {
+                        "inputs": {
+                            "host": {
+                                "connection": {
+                                    "name": "@parameters('$connections')['aci']['connectionId']"
+                                }
+                            },
+                            "method": "get",
+                            "path": "/subscriptions/@{encodeURIComponent('708854ac-164b-4d34-a0b9-69ff53d7704d')}/resourceGroups/@{encodeURIComponent('tkcr-rg')}/providers/Microsoft.ContainerInstance/containerGroups/@{encodeURIComponent(body('Create_or_update_a_container_group')?['name'])}",
+                            "queries": {
+                                "x-ms-api-version": "2019-12-01"
+                            }
+                        },
+                        "runAfter": {},
+                        "type": "ApiConnection"
+                    }
+                },
+                "expression": "@equals(body('Get_properties_of_a_container_group')?['properties']?['instanceView']?['state'], 'Succeeded')",
+                "limit": {
+                    "count": 60,
+                    "timeout": "PT1H"
+                },
+                "runAfter": {
+                    "Create_or_update_a_container_group": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "Until"
+            },
+            "acr-pw": {
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "acr-pw",
+                            "type": "string",
+                            "value": "WbpzAGPQvRaYFmFcjdpj9gWYRRiMXagjRCzVCY+4v4+ACRCu7vLu"
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "acr-un": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "InitializeVariable"
+            },
+            "acr-server-name": {
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "acr-server-name",
+                            "type": "string",
+                            "value": "tkwuscr.azurecr.io"
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "image-name": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "InitializeVariable"
+            },
+            "acr-un": {
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "acr-un",
+                            "type": "string",
+                            "value": "tkwuscr"
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "acr-server-name": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "InitializeVariable"
+            },
+            "ci-name": {
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "ci_name",
+                            "type": "string",
+                            "value": "test1-ci"
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "loopCount": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "InitializeVariable"
+            },
+            "image-name": {
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "image",
+                            "type": "string",
+                            "value": "tkwuscr.azurecr.io/helloconsole:latest"
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "ci-name": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "InitializeVariable"
+            },
+            "loopCount": {
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "loopCount",
+                            "type": "integer",
+                            "value": 5
+                        }
+                    ]
+                },
+                "runAfter": {},
+                "type": "InitializeVariable"
+            }
+        },
+        "contentVersion": "1.0.0.0",
+        "outputs": {},
+        "parameters": {
+            "$connections": {
+                "defaultValue": {},
+                "type": "Object"
+            }
+        },
+        "triggers": {
+            "manual": {
+                "inputs": {
+                    "schema": {}
+                },
+                "kind": "Http",
+                "type": "Request"
+            }
+        }
+    },
+    "parameters": {
+        "$connections": {
+            "value": {
+                "aci": {
+                    "connectionId": "/subscriptions/708854ac-164b-4d34-a0b9-69ff53d7704d/resourceGroups/tkcr-rg/providers/Microsoft.Web/connections/aci-1",
+                    "connectionName": "aci-1",
+                    "id": "/subscriptions/708854ac-164b-4d34-a0b9-69ff53d7704d/providers/Microsoft.Web/locations/centralus/managedApis/aci"
+                }
+            }
+        }
+    }
+}

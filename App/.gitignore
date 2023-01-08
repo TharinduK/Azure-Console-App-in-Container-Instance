@@ -479,3 +479,4 @@ $RECYCLE.BIN/
 #TK additions 
 *.dll
 *.pdb
+*\App\bin\*
