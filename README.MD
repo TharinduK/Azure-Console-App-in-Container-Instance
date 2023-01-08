@@ -113,7 +113,6 @@ docker build -t $image:$ver -f ./App/Dockerfile  .
 2. Setup script variables 
 ```shell
 registry=tkwuscr3 #tkwuscr
-#repo=tk
 image=helloconsole
 ver=latest
 
@@ -147,7 +146,7 @@ docker login $registry.azurecr.io -u $un -p $pw
 
 5. Push image to registry 
 ```shell
-# docker push [docker registry name]/[repo name]/[Image name]:[version]
+# docker push [docker registry name]/[Image name]:[version]
 docker push $registry.azurecr.io/$image:$ver
 ```
 
@@ -158,13 +157,13 @@ https://github.com/Azure-Samples/aci-logicapps-integration
 1. Create logic app with managed identity 
 
 ```shell
-registry=tkwuscr3
-#repo=tk
+registry=tkwuscr4 #tkwuscr
 image=helloconsole
 ver=latest
 
 sub=708854ac-164b-4d34-a0b9-69ff53d7704d
-rg=tkcr3-rg
+rg=tkcr4-rg #tkcr-rg
+
 l=centralus
 ```
 
@@ -179,133 +178,8 @@ az deployment group create -n InitialNetwrok \
 --parameters parameters.json 
 ```
 
-## To Do
-1. Investigate how to use managed identity for the logic app to pull image from Azure Container Registry 
-
-### Create az container instance using az CLI from image
-1. log in to Azure 
-```shell
-az login
-```
-
-2. Set context to correct subscription
-```shell
-sub=708854ac-164b-4d34-a0b9-69ff53d7704d
-az account set -s $sub
-az account list -o table
-
-```
-
-3. Create container instance from image ([using az CLI](https://learn.microsoft.com/en-us/cli/azure/container?view=azure-cli-latest#az-container-create))
-4. ```shell
-rg=tkcr-rg
-ci=helloconsole-ci
-registry=tkwuscr
-repo=tk
-image=helloconsole
-ver=latest
-un=$(az acr credential show -n $registry -g $rg --query username -o tsv)
-pw=$(az acr credential show -n $registry -g $rg --query passwords[0].value -o tsv)
-az container create -g $rg  -n $ci \
---registry-login-server $registry.azurecr.io \
---registry-username $un \
---registry-password $pw \
---image $registry.azurecr.io/$repo/$image:$ver \
---cpu 1 --memory 1 --os-type Windows	  \
---dns-name-label $ci 
-
-az container exec -g $rg  -n $ci --exec-command "cmd.exe"
-```
-
-# TO DO: Notes below are to do to include additional features 
-### Add connection to SQL server 
-1. Add nuget package listed below 
-   * Microsoft.Extensions.Configuration
-   * Microsoft.Extensions.Configuration.FileExtensions
-   * Microsoft.Extensions.Configuration.Json
-   * System.Data.SqlClient
-
-2. Add connection string to app settings (appsettings.json)
-```json
-{
-  "ConnectionStrings": {
-    "Default": "Server=YOUR_SERVER;Database=mydatabase;User Id=YOUR_USER;Password=YOUR_PASSWORD;MultipleActiveResultSets=true"
-  }
-}  
-```
-
-1. Treate appsettings.json file as content and copy to output directory (file>> properties>> "Copy to output directory: Copy always)
-
-2. Code to query database
-   
-  ```csharp
-using System.Data;
-using System.Data.SqlClient;
-using Microsoft.Extensions.Configuration;
-
-class Program
-{
-    public static async Task Main(string[] args)
-    {
-        var configuration = new ConfigurationBuilder()
-            .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.json");
-        var config = configuration.Build();
-
-        var connstr = config.GetConnectionString("Default");
-
-        QueryDatabase(connstr);
-    }
-
-    private static void QueryDatabase(string? connstr)
-    {
-        var conn = new SqlConnection();
-        conn.ConnectionString = connstr;
-
-        var cmd = conn.CreateCommand();
-        cmd.CommandText = @"select top 10 	c.CustomerId AS ID,	c.Company AS CompanyName from Customer c with (nolock)";
-        cmd.CommandType = CommandType.Text;
-        //cmd.CommandTimeout = _commandTimeout;
-
-        try
-        {
-            conn.Open();
-
-            var reader = cmd.ExecuteReader();
-            while (reader.Read())
-            {
-                Console.WriteLine($"ID {reader.GetGuid(0).ToString()} Company {reader.GetString(1)}");
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error Message: {ex.Message}");
-        }
-        finally
-        {
-            conn.Close();
-        }
-    }
-}
-```
 
 
-   
-### Add logging
-
-### Configuration 
-1. Environment specific variables
-
-2. Secrets (password, API Keys, connection string, license keys, ect.)
-3. Runtime knobs (log levels, feature togals)
-
-Layered configuration Order
-
-1. appsettings.json: json-based text file
-2. appsettings.<env>.json: based on ASPNETCORE_ENVIRONMENT
-3. User secrets: Development-only
-4. Environment variables (containers like env var --containers are immutable)
-5. Command-line arguments
 
 
 # Docker CLI commands

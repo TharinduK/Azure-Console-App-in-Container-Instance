@@ -4,12 +4,12 @@ param bradyTags object = {
   subsystem: 's'
   budget: 'b'
 }
-//resourceGroup().
 param location string = resourceGroup().location
+param subscriptionId string = subscription().id
 param conn_name string = 'aci-1'
 param logic_name string
 param acr_name string 
-param registry_pw string = '+6RhV7bTWIrAAuVAkvN7hOLO5qZ6PK66nzm45kCqwd+ACRDv1sUG'
+param registry_pw string = 'enter password'
 param registry_fqdn string = '${acr_name}.azurecr.io'
 param registry_un string = acr_name
 param ci_name string = 'testci'
@@ -20,6 +20,11 @@ param containerGroups_encodeURIComponent_body_Create_or_update_a_container_group
 resource acr 'Microsoft.ContainerRegistry/registries@2022-02-01-preview' = {
   name: acr_name
   location: location
+  tags: {
+    Platform: bradyTags.platform
+    Env: bradyTags.env
+    SubSystem: bradyTags.subSystem
+  }
   sku: {
     name: 'Standard'
     tier: 'Standard'
@@ -59,12 +64,12 @@ resource acr 'Microsoft.ContainerRegistry/registries@2022-02-01-preview' = {
   }
 }
 
-resource connections_aci_1_name_resource 'Microsoft.Web/connections@2016-06-01' = {
+resource connections_aci 'Microsoft.Web/connections@2016-06-01' = {
   name: conn_name
   location: location
   kind: 'V1'
   properties: {
-    displayName: 'Ruchira_Kumarasinghe@bradycorp.com'
+    displayName: 'aci'
     statuses: [
       {
         status: 'Connected'
@@ -91,12 +96,13 @@ resource connections_aci_1_name_resource 'Microsoft.Web/connections@2016-06-01' 
   }
 }
 
-
 resource logic 'Microsoft.Logic/workflows@2017-07-01' = {
   name: logic_name
   location: location
-  identity: {
-    type: 'SystemAssigned'
+  tags: {
+    Platform: bradyTags.platform
+    Env: bradyTags.env
+    SubSystem: bradyTags.subSystem
   }
   properties: {
     state: 'Enabled'
@@ -336,7 +342,7 @@ resource logic 'Microsoft.Logic/workflows@2017-07-01' = {
       '$connections': {
         value: {
           aci: {
-            connectionId: connections_aci_1_name_resource.id
+            connectionId: connections_aci.id
             connectionName: 'aci-1'
             id: '/subscriptions/708854ac-164b-4d34-a0b9-69ff53d7704d/providers/Microsoft.Web/locations/centralus/managedApis/aci'
           }
