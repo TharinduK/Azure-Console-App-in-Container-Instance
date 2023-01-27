@@ -2,8 +2,8 @@ param PlatformTag string = 'p'
 param EnvironmentTag string = 'e'
 param SubsystemTag string = 's'
 
-param ContainerInstanceName string = 'testci'
-param ContainerImageName string = 'helloconsole:latest'
+param DefaultContainerInstanceName string = 'testci'
+param DefaultContainerImageName string = 'helloconsole:latest'
 param LogicAppName string
 param LogicAppLocation string = resourceGroup().location
 param ContainerRegistryConnectionName string = 'logic-cr-conn'
@@ -133,7 +133,7 @@ resource logic 'Microsoft.Logic/workflows@2017-07-01' = {
                       environmentVariables: [
                         {
                           name: 'max_count'
-                          value: '@{variables(\'loopCount\')}'
+                          value: '@{variables(\'environmentVariable\')}'
                         }
                       ]
                       image: '@variables(\'image\')'
@@ -276,7 +276,7 @@ resource logic 'Microsoft.Logic/workflows@2017-07-01' = {
         }
         'ci-name': {
           runAfter: {
-            loopCount: [
+            environmentVariable: [
               'Succeeded'
             ]
           }
@@ -286,7 +286,7 @@ resource logic 'Microsoft.Logic/workflows@2017-07-01' = {
               {
                 name: 'ci_name'
                 type: 'string'
-                value: ContainerInstanceName
+                value: DefaultContainerInstanceName
               }
             ]
           }
@@ -303,19 +303,19 @@ resource logic 'Microsoft.Logic/workflows@2017-07-01' = {
               {
                 name: 'image'
                 type: 'string'
-                value: '${acr.properties.loginServer}/${ContainerImageName}'
+                value: '${acr.properties.loginServer}/${DefaultContainerImageName}'
               }
             ]
           }
         }
-        loopCount: {
+        environmentVariable: {
           runAfter: {
           }
           type: 'InitializeVariable'
           inputs: {
             variables: [
               {
-                name: 'loopCount'
+                name: 'environmentVariable'
                 type: 'integer'
                 value: 5
               }

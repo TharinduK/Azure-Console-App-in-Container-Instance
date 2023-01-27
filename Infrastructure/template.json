@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.12.1.58429",
-      "templateHash": "7153855447950982296"
+      "templateHash": "11869189795158547880"
     }
   },
   "parameters": {
@@ -21,11 +21,11 @@
       "type": "string",
       "defaultValue": "s"
     },
-    "ContainerInstanceName": {
+    "DefaultContainerInstanceName": {
       "type": "string",
       "defaultValue": "testci"
     },
-    "ContainerImageName": {
+    "DefaultContainerImageName": {
       "type": "string",
       "defaultValue": "helloconsole:latest"
     },
@@ -38,7 +38,7 @@
     },
     "ContainerRegistryConnectionName": {
       "type": "string",
-      "defaultValue": "aci-1"
+      "defaultValue": "logic-cr-conn"
     },
     "ContainerRegistryName": {
       "type": "string"
@@ -173,7 +173,7 @@
                           "environmentVariables": [
                             {
                               "name": "max_count",
-                              "value": "@{variables('loopCount')}"
+                              "value": "@{variables('environmentVariable')}"
                             }
                           ],
                           "image": "@variables('image')",
@@ -313,7 +313,7 @@
             },
             "ci-name": {
               "runAfter": {
-                "loopCount": [
+                "environmentVariable": [
                   "Succeeded"
                 ]
               },
@@ -323,7 +323,7 @@
                   {
                     "name": "ci_name",
                     "type": "string",
-                    "value": "[parameters('ContainerInstanceName')]"
+                    "value": "[parameters('DefaultContainerInstanceName')]"
                   }
                 ]
               }
@@ -340,18 +340,18 @@
                   {
                     "name": "image",
                     "type": "string",
-                    "value": "[format('{0}/{1}', reference(resourceId('Microsoft.ContainerRegistry/registries', parameters('ContainerRegistryName')), '2022-02-01-preview').loginServer, parameters('ContainerImageName'))]"
+                    "value": "[format('{0}/{1}', reference(resourceId('Microsoft.ContainerRegistry/registries', parameters('ContainerRegistryName')), '2022-02-01-preview').loginServer, parameters('DefaultContainerImageName'))]"
                   }
                 ]
               }
             },
-            "loopCount": {
+            "environmentVariable": {
               "runAfter": {},
               "type": "InitializeVariable",
               "inputs": {
                 "variables": [
                   {
-                    "name": "loopCount",
+                    "name": "environmentVariable",
                     "type": "integer",
                     "value": 5
                   }
