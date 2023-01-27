@@ -15,10 +15,6 @@ Below I have described my experiment on how I tried to achieve this objective us
 4. [Build and load image to registry](#build-and-load-image-to-registry)
 5. Trigger logic app
 
-
-
-
-
 ## Experiment 
 
 ### Prerequisites 
@@ -181,6 +177,12 @@ docker push $registry.azurecr.io/$image:$ver
 ```
 
 
+# Findings 
+The process worked well for jobs that are running less than 10 minutes. For jobs that are running longer the step to delete the container instance did not run, however the container will be stopped and you will not be billed by Azure 
+
+# Next steps 
+* Investigate how to set up connections to container registry through biceps  
+* Investigate how to cleanup container instances for longer running processors  
 
 
 
