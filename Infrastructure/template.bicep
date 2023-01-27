@@ -6,7 +6,7 @@ param ContainerInstanceName string = 'testci'
 param ContainerImageName string = 'helloconsole:latest'
 param LogicAppName string
 param LogicAppLocation string = resourceGroup().location
-param ContainerRegistryConnectionName string = 'aci-1'
+param ContainerRegistryConnectionName string = 'logic-cr-conn'
 
 param ContainerRegistryName string 
 param ContainerRegistryLocation string = resourceGroup().location

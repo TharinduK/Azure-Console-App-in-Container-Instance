@@ -1,33 +1,34 @@
 # Running .net console application on Azure container instance 
 
+We sometimes have the need to use a console application to perform some computational tasks. Sometimes these tasks are run on a schedule that's weekly or less often.   I would like to run these processors on serverless cloud infrastructure so that you are billed when service is utilized.
+
+Below I have described my experiment on how I tried to achieve this objective using Docker, Azure Container Instances (az ci) service, and Azure Logic Apps.
+
+### High-level process overview
+![Console App on CI Process](doc/img/console-on-ci.jpg)
+
+### High-level steps 
+1. [Create console app](#create-console-app)
+2. [Add docker support](#add-docker-support)
+3. [Setup Azure infrastructure](#setup-azure-infrastructure)
+
+
 ## Prerequisites 
-* [Docker Desktop](https://www.docker.com/products/docker-desktop/) >> Sign in to docker desktop
+* [Docker Desktop](https://www.docker.com/products/docker-desktop/) 
 * [.NET SDK](https://dotnet.microsoft.com/en-us/download/visual-studio-sdks)
 * [VS.Code](https://code.visualstudio.com)
-* VS Code extensions 
+* (Optional) VS Code extensions 
   * C# v1.25.2
   * Docker v1.23.2
   * vscode-icons v12.0.1
   * YAML v1.10.1
 
-## Decisions
-* Using Linux containers insted of Windows 
-  * Hosting Azure containers in Linux is less expensive 
-  * Allow using system identity to access container image 
 
-[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FTharinduK%2FAzureExperiments-console-in-ci%2Fmain%2FInfrastructure%2Ftemplate.json)
+
+
 ## Experiment 
 
-Check docker and dotnet CLI version 
-```shell
-# Docker Version
-docker --version 
-
-#dotnet sdk version
-dotnet --version 
-```
-
-### Create console app to run in docker 
+### Create console app
 1. Create .net application using vs code
 
 *Get supported project templates*
@@ -63,8 +64,9 @@ Console.WriteLine("End long running app");
    * "Run and Debug" extension >> "create a launch.json file > .NET 5+ and .NET Core"
 ![Add debugging file](./doc/AddDebug.png)
    * "Run and Debug" extension >> .NET Core Launch 
-  
-4. Add docker support using docker extension 
+
+### Add docker support
+1. Add docker support using docker extension 
    * Ctrl+Shift+P >> Add docker file..
   ![Add docker file](./doc/AddDockerSupport1.png)
    * Select project type ![Add docker file](./doc/AddDockerSupport2ProjectType.png)
@@ -99,9 +101,15 @@ WORKDIR /app
 COPY --from=publish /app/publish .
 ENTRYPOINT ["dotnet", "DotNet.Docker~.dll"]
 ```
-5. Debug project in docker 
+2. Debug project in docker 
 * "Run and Debug" extension >> "Docker .NET Core Launch
 ![Add docker file](./doc/LaunchProjectInDocker.png)
+
+### Setup Azure infrastructure 
+I used Azure portal to setup resources, however when I had a working version I created [bicep](Infrastructure/template.bicep) and [arm](Infrastructure/template.json) template to make setup simpler. Template sets up Azure Container Registry (if required), and Azure logic app.  
+
+
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FTharinduK%2FAzureExperiments-console-in-ci%2Fmain%2FInfrastructure%2Ftemplate.json)
 
 
 ### Build and load image to registory 
@@ -172,11 +180,7 @@ az deployment group create -n InitialSetup -g $rg \
 --parameters parameters.json 
 ```
 
-# Docker CLI commands
 
-* [docker ps <first characters of container name>](https://docs.docker.com/engine/reference/commandline/ps/) >> list containers 
-* [docker status <first characters of container name>](https://docs.docker.com/engine/reference/commandline/stats/) > Display a live stream of container(s) resource usage statistics
-* [docker inspect <first characters of container name>](https://docs.docker.com/engine/reference/commandline/inspect/) > Return low-level information on Docker objects
 
 # Refernece 
   * [Containerize a .NET app](https://learn.microsoft.com/en-us/dotnet/core/docker/build-container?tabs=windows)
