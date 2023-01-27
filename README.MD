@@ -7,13 +7,21 @@ Below I have described my experiment on how I tried to achieve this objective us
 ### High-level process overview
 ![Console App on CI Process](doc/img/console-on-ci.jpg)
 
-### High-level steps 
+*High-level steps*
+
 1. [Create console app](#create-console-app)
 2. [Add docker support](#add-docker-support)
 3. [Setup Azure infrastructure](#setup-azure-infrastructure)
+4. [Build and load image to registry](#build-and-load-image-to-registry)
+5. Trigger logic app
 
 
-## Prerequisites 
+
+
+
+## Experiment 
+
+### Prerequisites 
 * [Docker Desktop](https://www.docker.com/products/docker-desktop/) 
 * [.NET SDK](https://dotnet.microsoft.com/en-us/download/visual-studio-sdks)
 * [VS.Code](https://code.visualstudio.com)
@@ -22,11 +30,6 @@ Below I have described my experiment on how I tried to achieve this objective us
   * Docker v1.23.2
   * vscode-icons v12.0.1
   * YAML v1.10.1
-
-
-
-
-## Experiment 
 
 ### Create console app
 1. Create .net application using vs code
@@ -111,8 +114,25 @@ I used Azure portal to setup resources, however when I had a working version I c
 
 [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FTharinduK%2FAzureExperiments-console-in-ci%2Fmain%2FInfrastructure%2Ftemplate.json)
 
+> Note: I have not been able to get logic app connection to the container registry working with biceps. Currently you would need to add a new connection using your credentials.
 
-### Build and load image to registory 
+#### Logic app
+Logic app has the following workflow 
+1. Triggered by HTTP request 
+2. Set environment variables
+3. Create Azure Container instance (pull image from container registry and run container) ([options](https://learn.microsoft.com/en-us/connectors/aci/#create-or-update-a-container-group)
+4. Wait until complete 
+5. Get container log
+6. Delete container instance 
+
+Workflow overview 
+![Logic App High Level](doc/img/LogicAppHighlevel.jpg)
+
+Crate container instance 
+![create ci](doc/img/create_ci-1.jpg)
+![create ci](doc/img/create_ci-3.jpg)
+
+### Build and load image to registry 
 1. Build a docker image with docker file in the current directory (.)
 ```shell
 # Docker build –t [image name]:[version] -f [docker file location] [path]
@@ -122,12 +142,12 @@ docker build -t $image:$ver -f ./App/Dockerfile  .
 ```
 2. Setup script variables 
 ```shell
-registry=tkwuscr3 #tkwuscr
+registry=demotkcr
 image=helloconsole
 ver=latest
 
-sub=708854ac-164b-4d34-a0b9-69ff53d7704d
-rg=tkcr3-rg #tkcr-rg
+sub=[subscription id]
+rg=demotk-rg
 
 ```
 
@@ -160,25 +180,7 @@ docker login $registry.azurecr.io -u $un -p $pw
 docker push $registry.azurecr.io/$image:$ver
 ```
 
-### Create az container instance using logic app image
 
-
-Create infrastructure resouces
-```shell
-registry=tkwuscr4 #tkwuscr
-image=helloconsole
-ver=latest
-sub=708854ac-164b-4d34-a0b9-69ff53d7704d
-rg=tkcr4-rg #tkcr-rg
-l=centralus
-
-az group create -n $rg -l $l
-
-az deployment group create -n InitialSetup -g $rg \
---mode Incremental \
---template-file template.bicep \
---parameters parameters.json 
-```
 
 
 
