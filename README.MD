@@ -6,10 +6,8 @@ Below I have described my experiment on how I tried to achieve this objective us
 
 ### High-level process overview
 ![Console App on CI Process](doc/img/console-on-ci.jpg)
-![Console App on CI Process](doc/img/console-on-ci.drawio)
 
 *High-level steps*
-
 1. [Create console app](#create-console-app)
 2. [Add docker support](#add-docker-support)
 3. [Setup Azure infrastructure](#setup-azure-infrastructure)
