@@ -1,11 +1,12 @@
 # Running .net console application on Azure container instance 
 
-We sometimes have the need to use a console application to perform some computational tasks. Sometimes these tasks are run on a schedule that's weekly or less often.   I would like to run these processors on serverless cloud infrastructure so that you are only billed when service is utilized.
+We sometimes have the need to use a batch (console) application to perform some computational tasks. These tasks may run on a schedule, however may not run often enough to justify setting up a dedicated deployment/run pipeline.  I would like to run these processors on serverless cloud infrastructure so that you are only billed when service is utilized, and use low-code options for setup.  
 
-Below I have described my experiment on how I tried to achieve this objective using Docker, Azure Container Instances service, and Azure Logic Apps.
+Below I have described my experiment on how I tried to achieve this objective using Docker, Azure [Container Instances](https://learn.microsoft.com/en-us/azure/container-instances) service, and Azure [Logic Apps](https://learn.microsoft.com/en-us/azure/logic-apps).
 
 ### High-level process overview
 ![Console App on CI Process](doc/img/console-on-ci.jpg)
+![Console App on CI Process](doc/img/console-on-ci.drawio)
 
 *High-level steps*
 
@@ -19,8 +20,9 @@ Below I have described my experiment on how I tried to achieve this objective us
 ## Experiment 
 
 ### Prerequisites 
-* [Docker Desktop](https://www.docker.com/products/docker-desktop/) 
+* [Docker Desktop](https://www.docker.com/products/docker-desktop) 
 * [.NET SDK](https://dotnet.microsoft.com/en-us/download/visual-studio-sdks)
+* [Azure CLI](https://learn.microsoft.com/en-us/cli/azure)
 * [VS.Code](https://code.visualstudio.com)
 * (Optional) VS Code extensions 
   * C# v1.25.2
@@ -77,7 +79,8 @@ Console.WriteLine("End long running app");
 
    * Docker file is created 
 ![Add docker file](./doc/AddDockerSupport5DockerFileAdded.png)
-Docker file 
+
+Example of the docker file thats generated 
 ```yaml
 FROM mcr.microsoft.com/dotnet/runtime:7.0 AS base
 WORKDIR /app
@@ -108,10 +111,11 @@ ENTRYPOINT ["dotnet", "helloConsole.dll"]
 ![Add docker file](./doc/LaunchProjectInDocker.png)
 
 ### Setup Azure infrastructure 
-I used Azure portal to setup resources, however when I had a working version I created [bicep](Infrastructure/template.bicep) and [arm](Infrastructure/template.json) template to make setup simpler. Template sets up Azure Container Registry (if required), and Azure logic app.  
-
-
 [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FTharinduK%2FAzureExperiments-console-in-ci%2Fmain%2FInfrastructure%2Ftemplate.json)
+
+I used Azure portal to setup resources, however when I had a working version I created [bicep](Infrastructure/template.bicep) and [arm](Infrastructure/template.json) template to make setup simpler. Use the "Deploy to Azure" button to deploy an ARM Template to seutp the following resources: 
+1. Azure Container Registry (if required)
+2. Azure logic app
 
 > Note: I have not been able to get logic app connection to the container registry working with biceps. Currently you would need to add a new connection using your credentials.
 
