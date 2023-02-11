@@ -1,5 +1,0 @@
-C:\reposgithub\AzureExperiments-console-in-ci\App\bin\Release\net6.0\publish\DotNet.Docker~.exe
-C:\reposgithub\AzureExperiments-console-in-ci\App\bin\Release\net6.0\publish\DotNet.Docker~.dll
-C:\reposgithub\AzureExperiments-console-in-ci\App\bin\Release\net6.0\publish\DotNet.Docker~.deps.json
-C:\reposgithub\AzureExperiments-console-in-ci\App\bin\Release\net6.0\publish\DotNet.Docker~.runtimeconfig.json
-C:\reposgithub\AzureExperiments-console-in-ci\App\bin\Release\net6.0\publish\DotNet.Docker~.pdb
